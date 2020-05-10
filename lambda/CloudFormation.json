@@ -1,36 +1,57 @@
 {
-    "AWSTemplateFormatVersion": "2010-09-09",
-    "Resources": {
-        "LambdaFunction": {
-            "Type": "AWS::Lambda::Function",
-            "Properties": {
-                "Handler": "index.handler",
-                "Role": { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
-                "Code": {
-                    "S3Bucket": "lambda-resource-src",
-                    "S3Key": "function.zip"
-                },
-                "Runtime": "nodejs12.x",
-                "FunctionName": "jlli-hello-lambda"
-            }
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "LambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Role": { "Fn::GetAtt": ["LambdaExecutionRole", "Arn"] },
+        "Code": {
+          "S3Bucket": "jlli-lambda-resource-src",
+          "S3Key": "function.zip"
         },
-        "LambdaExecutionRole": {
-            "Type": "AWS::IAM::Role",
-            "Properties": {
-                "RoleName": "lambda-s3-role",
-                "AssumeRolePolicyDocument": {
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": ["lambda.amazonaws.com"]
-                            },
-                            "Action": ["sts:AssumeRole"]
-                        }
-                    ]
-                }
+        "Runtime": "nodejs12.x",
+        "FunctionName": "jlli-hello-lambda"
+      }
+    },
+    "LambdaExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "jlli-lambda-s3-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": ["lambda.amazonaws.com"]
+              },
+              "Action": ["sts:AssumeRole"]
             }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Ref": "S3ManagedPolicy"
+          }
+        ]
+      }
+    },
+    "S3ManagedPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AllowAccessS3",
+              "Effect": "Allow",
+              "Action": ["s3:GetObject", "s3:PutObject", "s3:PutObjectAcl"],
+              "Resource": "arn:aws:s3:::*"
+            }
+          ]
         }
+      }
     }
+  }
 }

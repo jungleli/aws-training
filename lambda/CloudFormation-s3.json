@@ -1,55 +1,51 @@
 {
-    "AWSTemplateFormatVersion": "2010-09-09",
-    "Parameters": {
-        "BucketName": {
-            "Type": "String",
-            "Default": "lambda-resource-src"
-        }
-    },
-    "Resources": {
-        "S3Bucket": {
-            "Type": "AWS::S3::Bucket",
-            "Properties": {
-                "BucketName": {
-                    "Ref": "BucketName"
-                }
-            }
-        },
-        "BucketPolicy": {
-            "Type": "AWS::S3::BucketPolicy",
-            "Properties": {
-                "PolicyDocument": {
-                    "Id": "MyPolicy",
-                    "Version": "2012-10-17",
-                    "Statement": [
-                        {
-                            "Sid": "PublicReadForGetBucketObjects",
-                            "Effect": "Allow",
-                            "Principal": "*",
-                            "Action": [
-                                "s3:GetObject",
-                                "s3:PutObject",
-                                "s3:PutObjectAcl"
-                            ],
-                            "Resource": {
-                                "Fn::Join": [
-                                    "",
-                                    [
-                                        "arn:aws:s3:::",
-                                        {
-                                            "Ref": "S3Bucket"
-                                        },
-                                        "/*"
-                                    ]
-                                ]
-                            }
-                        }
-                    ]
-                },
-                "Bucket": {
-                    "Ref": "S3Bucket"
-                }
-            }
-        }
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "BucketName": {
+      "Type": "String",
+      "Default": "jlli-lambda-resource-src"
     }
+  },
+  "Resources": {
+    "S3Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Ref": "BucketName"
+        }
+      }
+    },
+    "BucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Id": "MyPolicy",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "PublicReadForAccessBucketObjects",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": ["s3:GetObject", "s3:PutObject", "s3:PutObjectAcl"],
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "S3Bucket"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        "Bucket": {
+          "Ref": "S3Bucket"
+        }
+      }
+    }
+  }
 }
