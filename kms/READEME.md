@@ -34,3 +34,17 @@
 ### Terms
 
 CMK: customer master key
+
+### More
+
+- Using CloudTrail to aduit the using history
+  - Filter by event source: `kms.amazonaws.com`
+- Using ssm put/get secure key
+
+    ```
+    aws ssm put-parameter --name jlli-key --value "welcom jlli" --type SecureString
+    ```
+
+    ```
+    aws ssm get-parameter --name jlli-key --with-decryption
+    ```
