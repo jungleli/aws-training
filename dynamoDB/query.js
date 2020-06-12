@@ -15,7 +15,7 @@ var params = {
     ":t": "type E",
     // ":p": "project",
   },
-  KeyConditionExpression: "projetName = :n and projectType = :t",
+  KeyConditionExpression: "projectName = :n and projectType = :t",
 };
 
 docClient.query(params, function (err, data) {
