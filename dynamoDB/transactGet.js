@@ -12,6 +12,29 @@ var params = {
   TableName: process.argv[2],
 };
 
+var params = {
+  TransactItems: [
+    {
+      Get: {
+        TableName: process.argv[2],
+        Key: {
+          projectName: "project A",
+          projectType: "type A",
+        },
+      },
+    },
+    {
+      Get: {
+        TableName: `${process.argv[2]}_BC`,
+        Key: {
+          projectName: "project B",
+          projectType: "type B",
+        },
+      },
+    },
+  ],
+};
+
 docClient.transactGet(params, function (err, data) {
   if (err) {
     console.error(
