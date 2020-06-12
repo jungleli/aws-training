@@ -92,6 +92,8 @@
 - node update.js Project_JLLI
 - node get.js Project_JLLI
 - node delete.js Project_JLLI
+- node transactWrite.js Project_JLLI
+- node transactGet.js Project_JLLI
 
 本地测试：
 Follow the [link](https://docs.aws.amazon.com/zh_cn/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html) to set up env.
