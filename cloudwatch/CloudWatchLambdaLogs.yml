@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Monitor logs in cloudwatch
+Resources:
+    EventRule:
+        Type: AWS::Events::Rule
+        Properties:
+            ScheduleExpression: "rate(1 minute)"
+            State: "ENABLED"
+            Targets:
+                - Arn: !GetAtt LambdaFunction.Arn
+                  Id: 123
+
+    LambdaFunction:
+        Type: AWS::Lambda::Function
+        Properties:
+            FunctionName: "addLogs-jlli"
+            Role: arn:aws:iam::494526681395:role/lambda-with-metrics-role
+            Runtime: nodejs12.x
+            Handler: index.handler
+            Code:
+                ZipFile: |
+                    exports.handler = (event, context, callback) => {
+                            console.log("Success", JSON.stringify(data))
+                    }
+
+    LambdaFunctionLogGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+            LogGroupName: !Sub "/aws/lambda/${LambdaFunction}"
+            RetentionInDays: 7
+
+    LogsMetricFilter:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+            LogGroupName: !Ref LambdaFunctionLogGroup
+            FilterPattern: "INFO Success"
+            MetricTransformations:
+                - MetricValue: 1
+                  MetricNamespace: "aws-jlli"
+                  MetricName: "success-filter"
+
+    LogAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            MetricName: customise-metric-jlli
+            Namespace: aws-jlli
+            Statistic: Average
+            Period: "10"
+            EvaluationPeriods: "1"
+            Threshold: "2"
+            ComparisonOperator: GreaterThanThreshold
+            InsufficientDataActions:
+                - Ref: SNSTopic
+            AlarmActions:
+                - Ref: SNSTopic
+
+    SNSTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+            Subscription:
+                - Endpoint: jlli@thoughtworks.com
+                  Protocol: email

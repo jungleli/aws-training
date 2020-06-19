@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Trigger lambda in cloudwatch event rule
+Resources:
+    EventRule:
+        Type: AWS::Events::Rule
+        Properties:
+            Name: cloudwatch-lambda-metrics-jlli
+            ScheduleExpression: "rate(1 minute)"
+            State: "ENABLED"
+            Targets:
+                - Arn: !GetAtt AddMetricsLambda.Arn
+                  Id: 123
+
+    AddMetricsLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+            Role: arn:aws:iam::494526681395:role/lambda-with-metrics-role
+            Runtime: nodejs12.x
+            Handler: index.handler
+            Code:
+                ZipFile: |
+                    const AWS = require("aws-sdk")
+                    const cloudwatchClient = new AWS.CloudWatch()
+                    exports.handler = (event, context, callback) => {
+                            const params = {
+                                MetricData: [
+                                {
+                                    MetricName: "customise-metric-jlli",
+                                    Dimensions: [
+                                    {
+                                        Name: "count",
+                                        Value: "number",
+                                    },
+                                    ],
+                                    Unit: "Count",
+                                    Value: Math.floor(Math.random() * 100) + 1,
+                                },
+                                ],
+                                Namespace: "aws-jlli",
+                            };
+                        cloudwatchClient.putMetricData(params, function (err, data) {
+                                console.log("callback function")
+                                if (err) {
+                                console.log("Error", err)
+                                } else {
+                                console.log("Success", JSON.stringify(data))
+                                }
+                            })
+                    }
+
+    Alarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmName: alarm-jlli
+            MetricName: customise-metric-jlli
+            Namespace: aws-jlli
+            Statistic: Average
+            Period: "10"
+            EvaluationPeriods: "1"
+            Threshold: "5"
+            ComparisonOperator: GreaterThanThreshold
+            InsufficientDataActions:
+                - Ref: SNSTopic
+            AlarmActions:
+                - Ref: SNSTopic
+
+    SNSTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+            DisplayName: sns-topic-jlli
+            Subscription:
+                - Endpoint: jlli@thoughtworks.com
+                  Protocol: email
+            TopicName: sendAlarm
