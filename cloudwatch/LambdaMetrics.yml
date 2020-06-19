@@ -51,7 +51,6 @@ Resources:
     Alarm:
         Type: AWS::CloudWatch::Alarm
         Properties:
-            AlarmName: alarm-jlli
             MetricName: customise-metric-jlli
             Namespace: aws-jlli
             Statistic: Average
