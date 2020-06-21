@@ -11,6 +11,13 @@ Resources:
                 - Arn: !GetAtt AddMetricsLambda.Arn
                   Id: 123
 
+    InvokeLambdaPermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+            FunctionName: !GetAtt AddMetricsLambda.Arn
+            Action: "lambda:InvokeFunction"
+            Principal: "events.amazonaws.com"
+
     AddMetricsLambda:
         Type: AWS::Lambda::Function
         Properties:
@@ -25,10 +32,10 @@ Resources:
                             const params = {
                                 MetricData: [
                                 {
-                                    MetricName: "customise-metric-jlli",
+                                    MetricName: "average-jlli",
                                     Dimensions: [
                                     {
-                                        Name: "count",
+                                        Name: "total",
                                         Value: "number",
                                     },
                                     ],
@@ -39,7 +46,6 @@ Resources:
                                 Namespace: "aws-jlli",
                             };
                         cloudwatchClient.putMetricData(params, function (err, data) {
-                                console.log("callback function")
                                 if (err) {
                                 console.log("Error", err)
                                 } else {
@@ -51,7 +57,10 @@ Resources:
     Alarm:
         Type: AWS::CloudWatch::Alarm
         Properties:
-            MetricName: customise-metric-jlli
+            MetricName: average-jlli
+            Dimensions:
+                - Name: total
+                  Value: number
             Namespace: aws-jlli
             Statistic: Average
             Period: "10"
@@ -66,8 +75,7 @@ Resources:
     SNSTopic:
         Type: AWS::SNS::Topic
         Properties:
-            DisplayName: sns-topic-jlli
+            DisplayName: sns-jlli
             Subscription:
                 - Endpoint: jlli@thoughtworks.com
                   Protocol: email
-            TopicName: sendAlarm
