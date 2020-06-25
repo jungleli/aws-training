@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+    SQSQueue:
+        Type: AWS::SQS::Queue
+        Properties:
+            MessageRetentionPeriod: 604800
+            VisibilityTimeout: 300
+            KmsMasterKeyId: ecd30b40-8c4a-45c7-90a4-b48ffda03bc2
+            RedrivePolicy:
+                deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+                maxReceiveCount: 5
+            Tags:
+                - Key: version
+                  Value: 1.0
+    DeadLetterQueue:
+        Type: AWS::SQS::Queue
+    QueuePolicy:
+        Type: AWS::SQS::QueuePolicy
+        Properties:
+            Queues:
+                - !Ref SQSQueue
+            PolicyDocument:
+                Statement:
+                    - Action:
+                          - sqs:SendMessage
+                          - sqs:ReceiveMessage
+                      Effect: "Allow"
+                      Resource:
+                          - !Ref SQSQueue
+                      Principal:
+                          Service:
+                              - sns.amazonaws.com
+    DLQAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+            AlarmDescription: "Alarm if any message is sent to DLQ"
+            Namespace: "AWS/SQS"
+            MetricName: "ApproximateNumberOfMessagesVisible"
+            Dimensions:
+                - Name: DLQ
+                  Value: !GetAtt DeadLetterQueue.Arn
+            Statistic: "Sum"
+            Period: "300"
+            EvaluationPeriods: "10"
+            Threshold: "0"
+            ComparisonOperator: "GreaterThanThreshold"
+            InsufficientDataActions:
+                - Ref: SNSTopic
+            AlarmActions:
+                - Ref: SNSTopic
+    IAMRole:
+        Type: AWS::IAM::Role
+        Properties:
+            AssumeRolePolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service:
+                              - lambda.amazonaws.com
+                      Action:
+                          - sts:AssumeRole
+            Policies:
+                - PolicyName: LambdaLogPolicy
+                  PolicyDocument:
+                      Version: 2012-10-17
+                      Statement:
+                          - Effect: Allow
+                            Action:
+                                - logs:*
+                            Resource:
+                                - arn:aws:logs:*:*:*
+                - PolicyName: LambdaSQSPolicy
+                  PolicyDocument:
+                      Version: 2012-10-17
+                      Statement:
+                          - Effect: Allow
+                            Action:
+                                - sqs:*
+                            Resource:
+                                - !GetAtt SQSQueue.Arn
+    LambdaFunction:
+        Type: AWS::Lambda::Function
+        Properties:
+            Handler: index.handler
+            Role: !GetAtt IAMRole.Arn
+            Runtime: nodejs12.x
+            Code:
+                ZipFile: |
+                    exports.handler = (event, context, callback) => {
+                            console.log("Event", JSON.stringify(event))
+                    }
+    LambdaEventSourceMapping:
+        Type: AWS::Lambda::EventSourceMapping
+        Properties:
+            EventSourceArn: !GetAtt SQSQueue.Arn
+            FunctionName: !Ref LambdaFunction
+    SNSTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+            KmsMasterKeyId: ecd30b40-8c4a-45c7-90a4-b48ffda03bc2
+            Subscription:
+                - Endpoint: jlli@thoughtworks.com
+                  Protocol: email
+                - Endpoint: !GetAtt SQSQueue.Arn
+                  Protocol: sqs
+    SNSPolicy:
+        Type: AWS::SNS::TopicPolicy
+        Properties:
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Action:
+                          - sns:Subscribe
+                          - sns:Publish
+                          - sns:ListSubscriptionsByTopic
+                      Effect: Allow
+                      Principal:
+                          Service: events.amazonaws.com
+                      Resource: !Ref SNSTopic
+            Topics:
+                - !Ref SNSTopic
+    SNSEventRole:
+        Type: AWS::Events::Rule
+        Properties:
+            Description: Trigger SNS in every 5 minutes
+            ScheduleExpression: "rate(5 minutes)"
+            State: "ENABLED"
+            Targets:
+                - Arn: !Ref SNSTopic
+                  Id: TriggerSNSTopic
