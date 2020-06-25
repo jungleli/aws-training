@@ -5,7 +5,7 @@ Resources:
         Properties:
             MessageRetentionPeriod: 604800
             VisibilityTimeout: 300
-            KmsMasterKeyId: ecd30b40-8c4a-45c7-90a4-b48ffda03bc2
+            # KmsMasterKeyId: ecd30b40-8c4a-45c7-90a4-b48ffda03bc2
             RedrivePolicy:
                 deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
                 maxReceiveCount: 5
@@ -95,10 +95,15 @@ Resources:
         Properties:
             EventSourceArn: !GetAtt SQSQueue.Arn
             FunctionName: !Ref LambdaFunction
+    LambdaFunctionLogGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+            LogGroupName: !Ref LambdaFunction
+            RetentionInDays: 7
     SNSTopic:
         Type: AWS::SNS::Topic
         Properties:
-            KmsMasterKeyId: ecd30b40-8c4a-45c7-90a4-b48ffda03bc2
+            # KmsMasterKeyId: ecd30b40-8c4a-45c7-90a4-b48ffda03bc2
             Subscription:
                 - Endpoint: jlli@thoughtworks.com
                   Protocol: email
